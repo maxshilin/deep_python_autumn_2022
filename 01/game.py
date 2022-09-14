@@ -30,7 +30,10 @@ class TicTac:
             else:
                 print("Error. Your number should be 1-9")
 
-        elif num.isnumeric():
+        elif (
+            num.replace("-", "").isnumeric()
+            and not num.replace("-", "").isdecimal()
+        ):
             print("Error. Don't use ASCII characters")
 
         elif num.replace("-", "").isnumeric():
