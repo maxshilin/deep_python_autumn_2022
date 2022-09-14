@@ -21,14 +21,21 @@ class TicTac:
     def validate_input(self, num):
         num = num.replace(" ", "")
 
-        if num.isnumeric() and int(num) <= 9 and int(num) >= 1:
-            if self.board[int(num) - 1] == " ":
-                return int(num)
+        if num.isdecimal() and num.isnumeric():
+            if int(num) <= 9 and int(num) >= 1:
+                if self.board[int(num) - 1] == " ":
+                    return int(num)
 
-            print("Error. This cell is already occupied")
+                print("Error. This cell is already occupied")
+            else:
+                print("Error. Your number should be 1-9")
+
+        elif num.isnumeric():
+            print("Error. Don't use ASCII characters")
 
         elif num.replace("-", "").isnumeric():
-            print("Error. Your should be 1-9")
+            print("Error. Your number should be 1-9")
+
         else:
             print("Error. Your should enter an integer number")
         return None

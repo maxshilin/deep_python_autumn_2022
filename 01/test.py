@@ -10,6 +10,8 @@ class TestEvens(unittest.TestCase):
         for i in range(1, 10):
             self.assertEqual(game.validate_input(f" {i} "), i)
 
+        self.assertEqual(game.validate_input("\u0661"), 1)
+
     @unittest.mock.patch("builtins.print")
     def test_check_incorrect_int_input(self, input_mock):
         input_mock.return_value = None
@@ -34,6 +36,10 @@ class TestEvens(unittest.TestCase):
         self.assertIsNone(game.validate_input("5.31"))
         self.assertIsNone(game.validate_input("-1.37"))
         self.assertIsNone(game.validate_input("-12.45"))
+        self.assertIsNone(game.validate_input("²"))
+        self.assertIsNone(game.validate_input("² ⅘"))
+        self.assertIsNone(game.validate_input("⅓"))
+        self.assertIsNone(game.validate_input("\u0660"))
 
     @unittest.mock.patch("builtins.print")
     def test_check_occupied_cell(self, input_mock):
