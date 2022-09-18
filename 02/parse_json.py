@@ -21,7 +21,10 @@ def parse_json(
     parsed_json = json.loads(json_str)
 
     for field in required_fields:
-        tokens = get_tokens(parsed_json[field])
+        if field in parsed_json:
+            tokens = get_tokens(parsed_json[field])
+        else:
+            continue
         if tokens:
             for token in tokens:
                 if token in keywords:
