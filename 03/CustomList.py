@@ -96,6 +96,6 @@ class CustomList(list):
         super().reverse()
         return self
 
-    def sort(self, reverse=True | False, key=None):
+    def sort(self, reverse=False, key=None):
         super().sort(reverse=reverse, key=key)
         return self
