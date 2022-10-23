@@ -14,23 +14,25 @@ from bs4 import BeautifulSoup
 class Server:
     def __init__(self, workers, k):
         self.k = k
+        self.server = None
 
+        self.workers = workers
+        self.client_workers = self.recieve_clients_workers()
+
+        self.lock = threading.Lock()
+        self.counter = 0
+
+    def recieve_clients_workers(self):
         self.server = socket.socket(
             socket.AF_INET, socket.SOCK_STREAM
         )  # socket.AF_UNIX for UNIX systems
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server.bind(("localhost", 777))
 
-        self.client_workers = self.recieve_clients_workers()
-        self.workers = workers
-
-        self.lock = threading.Lock()
-        self.counter = 0
-
-    def recieve_clients_workers(self):
         self.server.listen()
         client_socket, _ = self.server.accept()
         num = client_socket.recv(1024).decode(encoding="utf_8")
+        client_socket.send(f"{self.workers}".encode(encoding="utf_8"))
         client_socket.close()
         return int(num)
 
@@ -82,7 +84,7 @@ class Server:
             try:
                 url = que.get(timeout=1)
                 client_socket = connections.get(timeout=1)
-                if url == "!disconnection":
+                if url == "!stop":
                     client_socket.close()
                     break
 
@@ -121,7 +123,7 @@ class Server:
             client_socket, _ = self.server.accept()
             url = client_socket.recv(1024).decode(encoding="utf_8")
             print(url)
-            if url == "!None":
+            if url == "!disconnect":
                 break
 
             que.put(url)
