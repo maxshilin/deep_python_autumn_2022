@@ -5,8 +5,7 @@ from urllib.error import HTTPError
 import socket
 import re
 from collections import Counter
-
-# import sys
+import sys
 from json import dumps
 from bs4 import BeautifulSoup
 
@@ -82,10 +81,9 @@ class Server:
     def fetch_and_send(self, que, connections):
         while True:
             try:
-                url = que.get(timeout=1)
-                client_socket = connections.get(timeout=1)
-                if url == "!stop":
-                    client_socket.close()
+                url = que.get(timeout=0.1)
+                client_socket = connections.get(timeout=0.1)
+                if url is None:
                     break
 
             except Exception:
@@ -93,15 +91,15 @@ class Server:
 
             data = self.fetch_url(url)
 
-            with self.lock:
-                if data is None:
-                    data = "URL does not exist"
-                    client_socket.send(data.encode())
-                else:
-                    client_socket.send(data.encode())
+            if data is None:
+                data = "URL does not exist"
+                client_socket.send(data.encode())
+            else:
+                client_socket.send(data.encode())
+                with self.lock:
                     self.counter += 1
                     print(f"URL downloaded: {self.counter}")
-                client_socket.close()
+            client_socket.close()
 
     def work(self):
         que = Queue(2 * self.client_workers)
@@ -122,12 +120,15 @@ class Server:
             self.server.listen(2 * self.client_workers)
             client_socket, _ = self.server.accept()
             url = client_socket.recv(1024).decode(encoding="utf_8")
-            print(url)
             if url == "!disconnect":
                 break
 
             que.put(url)
             connections.put(client_socket)
+
+        for _ in range(len(threads)):
+            que.put(None)
+            connections.put(None)
 
         for thread in threads:
             thread.join()
@@ -136,6 +137,6 @@ class Server:
 
 
 if __name__ == "__main__":
-    # w, k = sys.argv[2], sys.argv[4]
-    server = Server(10, 5)
+    w, k = int(sys.argv[2]), int(sys.argv[4])
+    server = Server(w, k)
     server.work()

@@ -1,6 +1,7 @@
 import socket
 import threading
-import queue
+from queue import Queue
+import sys
 
 
 class Client:
@@ -46,10 +47,6 @@ class Client:
             )  # socket.AF_UNIX for UNIX systems
             tcp_socket.connect(self.adress)
 
-            if url == "!stop":
-                tcp_socket.send(url.encode(encoding="utf_8"))
-                tcp_socket.close()
-
             tcp_socket.send(url.encode(encoding="utf_8"))
             data = tcp_socket.recv(1024).decode(encoding="utf_8")
 
@@ -60,13 +57,10 @@ class Client:
 
     def work(self):
         file = open(self.path, "r", encoding="utf-8")
-        que = queue.Queue(2 * self.workers)
+        que = Queue(2 * self.workers)
 
         threads = [
-            threading.Thread(
-                target=self.send_and_recieve,
-                args=(que,),
-            )
+            threading.Thread(target=self.send_and_recieve, args=(que,))
             for _ in range(self.workers)
         ]
 
@@ -75,10 +69,6 @@ class Client:
 
         for url in file.readlines():
             que.put(url.strip())
-
-        for _ in range(self.server_workers):
-            print(1)
-            que.put("!stop")
 
         for _ in range(len(threads)):
             que.put(None)
@@ -91,8 +81,8 @@ class Client:
 
 
 if __name__ == "__main__":
-    path = r"D:\projects\deep_python_autumn_2022\06\URLS.txt"
-    workers = 1
-
-    client = Client(workers, path)
+    m, path = int(sys.argv[1]), sys.argv[2]
+    # path = r"D:\projects\deep_python_autumn_2022\06\URLS.txt"
+    # workers = 10
+    client = Client(m, path)
     client.work()
