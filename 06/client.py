@@ -3,56 +3,66 @@ import threading
 import queue
 
 
-def send_and_recieve(que, tcp_socket, lock):
-    while True:
-        try:
-            url = que.get()
-            if url is None:
-                break
+class Client:
+    def __init__(self, workers, path):
+        self.workers = workers
+        self.path = path
+        self.adress = ("localhost", 777)
+        self.lock = threading.Lock()
 
-        except Exception:
-            continue
+    def send_and_recieve(self, que, tcp_socket):
+        while True:
+            try:
+                url = que.get()
+                if url is None:
+                    break
 
-        with lock:
-            tcp_socket.send(url.encode(encoding="utf_8"))
+            except Exception:
+                continue
 
-        data = tcp_socket.recv(1024).decode(encoding="utf_8")
-        with lock:
-            print(f"{url.strip()}: {data}")
+            with self.lock:
+                tcp_socket.send(url.encode(encoding="utf_8"))
+
+            with self.lock:
+                data = tcp_socket.recv(1024).decode(encoding="utf_8")
+                print(f"{url.strip()}: {data}")
+
+    def work(self):
+        tcp_socket = socket.socket(
+            socket.AF_INET, socket.SOCK_STREAM
+        )  # socket.AF_UNIX for UNIX systems
+
+        tcp_socket.connect(self.adress)
+        file = open(self.path, "r", encoding="utf-8")
+
+        que = queue.Queue(20)
+
+        threads = [
+            threading.Thread(
+                target=self.send_and_recieve,
+                args=(que, tcp_socket),
+            )
+            for _ in range(self.workers)
+        ]
+
+        for thread in threads:
+            thread.start()
+
+        for url in file.readlines():
+            que.put(url)
+
+        for _ in range(len(threads)):
+            que.put(None)
+
+        for thread in threads:
+            thread.join()
+
+        tcp_socket.close()
 
 
-addr = ("localhost", 777)
-path = r"D:\projects\deep_python_autumn_2022\06\URLS.txt"
-file = open(path, "r", encoding="utf-8")
+if __name__ == "__main__":
+    path = r"D:\projects\deep_python_autumn_2022\06\URLS.txt"
+    workers = 1
 
-tcp_socket = socket.socket(
-    socket.AF_INET, socket.SOCK_STREAM
-)  # socket.AF_UNIX for UNIX systems
-
-tcp_socket.connect(addr)
-
-que = queue.Queue(20)
-
-lock = threading.Lock()
-
-threads = [
-    threading.Thread(
-        target=send_and_recieve,
-        args=(que, tcp_socket, lock),
-    )
-    for _ in range(10)
-]
-
-for thread in threads:
-    thread.start()
-
-for url in file.readlines():
-    que.put(url)
-
-for i in range(len(threads)):
-    que.put(None)
-
-for thread in threads:
-    thread.join()
-
-tcp_socket.close()
+    client = Client(workers, path)
+    client.work()
