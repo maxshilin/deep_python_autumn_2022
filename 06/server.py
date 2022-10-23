@@ -1,5 +1,5 @@
 import threading
-import queue
+from queue import Queue
 from urllib.request import urlopen
 from urllib.error import HTTPError
 import socket
@@ -13,7 +13,6 @@ from bs4 import BeautifulSoup
 
 class Server:
     def __init__(self, workers, k):
-        self.workers = workers
         self.k = k
 
         self.server = socket.socket(
@@ -21,11 +20,49 @@ class Server:
         )  # socket.AF_UNIX for UNIX systems
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server.bind(("localhost", 777))
-        self.server.listen()
-        self.client_socket, _ = self.server.accept()
+
+        self.client_workers = self.recieve_clients_workers()
+        self.workers = workers
 
         self.lock = threading.Lock()
         self.counter = 0
+
+    def recieve_clients_workers(self):
+        self.server.listen()
+        client_socket, _ = self.server.accept()
+        num = client_socket.recv(1024).decode(encoding="utf_8")
+        client_socket.close()
+        return int(num)
+
+    def parse_html(self, raw_data):
+        ignore = [
+            "",
+            "the",
+            "a",
+            "if",
+            "in",
+            "it",
+            "of",
+            "or",
+            "and",
+            "is",
+            "to",
+            "by",
+            "on",
+            "that",
+            "from",
+            "s",
+            "t",
+            "mathbf",
+        ]
+        soup = BeautifulSoup(raw_data, "html.parser")
+        data = re.split(r"[\d\W+]", soup.get_text(strip=False))
+
+        counter = Counter([word.lower() for word in data])
+        for word in ignore:
+            if word in counter:
+                del counter[word]
+        return dumps(dict(counter.most_common(self.k)), ensure_ascii=False)
 
     def fetch_url(self, url):
         try:
@@ -33,22 +70,20 @@ class Server:
 
         except HTTPError:
             with self.lock:
-                print(f"URL {url.strip()} does not exist")
+                print(f"URL {url} does not exist")
             return None
 
-        raw_data = resp.read().decode("utf-8")
+        data = self.parse_html(resp.read().decode("utf-8"))
         resp.close()
-        soup = BeautifulSoup(raw_data, "html.parser")
-        data = re.split(r"[\d\W+]", soup.get_text(strip=False))
+        return data
 
-        counter = Counter([word.lower() for word in data if word != ""])
-        return dumps(dict(counter.most_common(self.k)), ensure_ascii=False)
-
-    def fetch_and_send(self, que):
+    def fetch_and_send(self, que, connections):
         while True:
             try:
                 url = que.get(timeout=1)
-                if url is None:
+                client_socket = connections.get(timeout=1)
+                if url == "!disconnection":
+                    client_socket.close()
                     break
 
             except Exception:
@@ -59,19 +94,21 @@ class Server:
             with self.lock:
                 if data is None:
                     data = "URL does not exist"
-                    self.client_socket.send(data.encode())
+                    client_socket.send(data.encode())
                 else:
-                    self.client_socket.send(data.encode())
+                    client_socket.send(data.encode())
                     self.counter += 1
                     print(f"URL downloaded: {self.counter}")
+                client_socket.close()
 
     def work(self):
-        que = queue.Queue(20)
+        que = Queue(2 * self.client_workers)
+        connections = Queue(2 * self.client_workers)
 
         threads = [
             threading.Thread(
                 target=self.fetch_and_send,
-                args=(que,),
+                args=(que, connections),
             )
             for _ in range(self.workers)
         ]
@@ -80,14 +117,15 @@ class Server:
             thread.start()
 
         while True:
-            url = self.client_socket.recv(1024).decode(encoding="utf_8")
-            if len(url) == 0:
+            self.server.listen(2 * self.client_workers)
+            client_socket, _ = self.server.accept()
+            url = client_socket.recv(1024).decode(encoding="utf_8")
+            print(url)
+            if url == "!None":
                 break
 
             que.put(url)
-
-        for _ in range(self.workers):
-            que.put(None)
+            connections.put(client_socket)
 
         for thread in threads:
             thread.join()
