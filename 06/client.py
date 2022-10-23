@@ -10,7 +10,7 @@ class Client:
         self.adress = ("localhost", 777)
 
         self.workers = workers
-        self.server_workers = self.server_num_workers()
+        self.server_num_workers()
 
         self.lock = threading.Lock()
         self.counter = 0
@@ -21,9 +21,7 @@ class Client:
         )  # socket.AF_UNIX for UNIX systems
         tcp_socket.connect(self.adress)
         tcp_socket.send(f"{self.workers}".encode(encoding="utf_8"))
-        num = tcp_socket.recv(1024).decode(encoding="utf_8")
         tcp_socket.close()
-        return int(num)
 
     def disconnect_from_server(self):
         tcp_socket = socket.socket(

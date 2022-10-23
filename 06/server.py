@@ -9,6 +9,8 @@ import sys
 from json import dumps
 from bs4 import BeautifulSoup
 
+from utils import delete_uninteresting_words
+
 
 class Server:
     def __init__(self, workers, k):
@@ -31,38 +33,16 @@ class Server:
         self.server.listen()
         client_socket, _ = self.server.accept()
         num = client_socket.recv(1024).decode(encoding="utf_8")
-        client_socket.send(f"{self.workers}".encode(encoding="utf_8"))
         client_socket.close()
         return int(num)
 
     def parse_html(self, raw_data):
-        ignore = [
-            "",
-            "the",
-            "a",
-            "if",
-            "in",
-            "it",
-            "of",
-            "or",
-            "and",
-            "is",
-            "to",
-            "by",
-            "on",
-            "that",
-            "from",
-            "s",
-            "t",
-            "mathbf",
-        ]
+
         soup = BeautifulSoup(raw_data, "html.parser")
         data = re.split(r"[\d\W+]", soup.get_text(strip=False))
 
         counter = Counter([word.lower() for word in data])
-        for word in ignore:
-            if word in counter:
-                del counter[word]
+        counter = delete_uninteresting_words(counter)
         return dumps(dict(counter.most_common(self.k)), ensure_ascii=False)
 
     def fetch_url(self, url):
