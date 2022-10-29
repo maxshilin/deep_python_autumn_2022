@@ -1,0 +1,78 @@
+import time
+import numpy as np
+
+import multiply
+
+
+def pymultiply(matrix_1: list, matrix_2: list):
+    len1_y = len(matrix_1)
+
+    if not isinstance(matrix_1[0], list):
+        print("Non-list type found in list of lists.")
+        return None
+
+    len1_x = len(matrix_1[0])
+
+    len2_y = len(matrix_2)
+
+    if not isinstance(matrix_2[0], list):
+        print("Non-list type found in list of lists.")
+        return None
+
+    len2_x = len(matrix_2[0])
+
+    if len1_x != len2_y:
+        print("ERROR: matrices should look like (m, n) and (n, l)")
+        return None
+
+    output = [[0 for _ in range(len2_x)] for _ in range(len1_y)]
+
+    for i in range(len1_y):
+        row = matrix_1[i]
+
+        for j in range(len1_x):
+            num2 = row[j]
+            row_tmp = matrix_2[j]
+
+            for k in range(len2_x):
+                num1 = row_tmp[k]
+                output[i][k] += num1 * num2
+    return output
+
+
+def main():
+    A = np.random.rand(600, 800)
+    B = np.random.rand(800, 500)
+    a = A.tolist()
+    b = B.tolist()
+
+    print("==== python ====")
+    start_ts = time.time()
+    pymultiply(a, b)
+    end_ts = time.time()
+    print(
+        "Time of execution of python multiply implementation is"
+        f" {end_ts-start_ts} seconds"
+    )
+
+    print("==== capi ====")
+    start_ts = time.time()
+    multiply.multiply(a, b)
+    end_ts = time.time()
+    print(
+        "Time of execution of capi multiply implementation is"
+        f" {end_ts-start_ts} seconds"
+    )
+
+    print("==== numpy ====")
+    start_ts = time.time()
+    np.dot(A, B)
+    end_ts = time.time()
+    print(
+        "Time of execution of numpy multiply implementation is"
+        f" {end_ts-start_ts} seconds"
+    )
+
+
+if __name__ == "__main__":
+    main()
