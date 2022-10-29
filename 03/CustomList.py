@@ -1,7 +1,4 @@
 class CustomList(list):
-    def __len__(self):
-        return super().__len__()
-
     def __getitem__(self, i):
         return super().__getitem__(i)
 
@@ -75,27 +72,3 @@ class CustomList(list):
 
     def __ge__(self, other):
         return sum(self) >= sum(other)
-
-    def extend(self, __iterable):
-        super().extend(__iterable)
-        return self
-
-    def insert(self, __index, __object):
-        super().insert(__index, __object)
-        return self
-
-    def pop(self, __index):
-        super().pop(__index)
-        return self
-
-    def remove(self, __value):
-        super().remove(__value)
-        return self
-
-    def reverse(self):
-        super().reverse()
-        return self
-
-    def sort(self, reverse=False, key=None):
-        super().sort(reverse=reverse, key=key)
-        return self

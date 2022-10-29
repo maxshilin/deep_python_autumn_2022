@@ -22,40 +22,49 @@ class TestCustomList(unittest.TestCase):
         self.assertEqual(custom_list.index(4), 4)
 
         custom_list = CustomList([1, 2, 3, 2, 4])
+        custom_list.extend([1, 2])
         self.assertEqual(
-            custom_list.extend([1, 2])[0:],
+            custom_list[0:],
             CustomList([1, 2, 3, 2, 4, 1, 2])[0:],
         )
 
         custom_list = CustomList([1, 2, 3, 6, 4])
+        custom_list.remove(6)
         self.assertEqual(
-            custom_list.remove(6)[0:],
+            custom_list[0:],
             CustomList([1, 2, 3, 4])[0:],
         )
 
         custom_list = CustomList([1, 2, 3, 6, 4])
+        custom_list.pop(2)
         self.assertEqual(
-            custom_list.pop(2)[0:],
+            custom_list[0:],
             CustomList([1, 2, 6, 4])[0:],
         )
 
         custom_list = CustomList([1, 2, 3, 6, 4])
+        custom_list.insert(3, 121)
         self.assertEqual(
-            custom_list.insert(3, 121)[0:],
+            custom_list[0:],
             CustomList([1, 2, 3, 121, 6, 4])[0:],
         )
 
         custom_list = CustomList([1, 23, 4, 21.4, -3])
+        custom_list.reverse()
         self.assertEqual(
-            custom_list.reverse()[0:],
+            custom_list[0:],
             CustomList([-3, 21.4, 4, 23, 1])[0:],
         )
+
+        custom_list.sort()
         self.assertEqual(
-            custom_list.sort()[0:],
+            custom_list[0:],
             CustomList([-3, 1, 4, 21.4, 23])[0:],
         )
+
+        custom_list.sort(reverse=True)
         self.assertEqual(
-            custom_list.sort(reverse=True)[0:],
+            custom_list[0:],
             CustomList([23, 21.4, 4, 1, -3])[0:],
         )
 
