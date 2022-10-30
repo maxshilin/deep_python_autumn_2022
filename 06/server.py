@@ -24,7 +24,7 @@ class Server:
         self.counter = 0
 
     def recieve_clients_workers(self):
-        self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.server = socket.socket()
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server.bind(("localhost", 777))
 
