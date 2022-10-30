@@ -12,5 +12,5 @@ class TestCustomList(unittest.TestCase):
         a = A.tolist()
         b = B.tolist()
 
-        self.assertEqual(multiply(a, b), np.dot(A, B).tolist())
-        self.assertEqual(pymultiply(a, b), np.dot(A, B).tolist())
+        self.assertEqual(multiply(a, b)[0:], np.dot(A, B).tolist()[0:])
+        self.assertEqual(pymultiply(a, b)[0:], np.dot(A, B).tolist()[0:])
