@@ -6,24 +6,31 @@ import multiply
 
 def pymultiply(matrix_1: list, matrix_2: list):
     len1_y = len(matrix_1)
-
-    if not isinstance(matrix_1[0], list):
-        print("Non-list type found in list of lists.")
-        return None
-
-    len1_x = len(matrix_1[0])
-
     len2_y = len(matrix_2)
 
-    if not isinstance(matrix_2[0], list):
-        print("Non-list type found in list of lists.")
-        return None
+    if len1_y == 0 or len2_y == 0:
+        raise RuntimeError("Matrix should not be a empty.")
+
+    len1_x = len(matrix_1[0])
+    for i in range(len1_y):
+        if not isinstance(matrix_1[0], list):
+            raise RuntimeError("Non-list type found in list of lists.")
+
+        if len1_x != len(matrix_1[i]):
+            raise RuntimeError("Matrix should not be with variable row size.")
 
     len2_x = len(matrix_2[0])
+    for i in range(len2_y):
+        if not isinstance(matrix_2[0], list):
+            raise RuntimeError("Non-list type found in list of lists.")
+
+        if len2_x != len(matrix_2[i]):
+            raise RuntimeError("Matrix should not be with variable row size.")
 
     if len1_x != len2_y:
-        print("ERROR: matrices should look like (m, n) and (n, l)")
-        return None
+        raise RuntimeError(
+            "ERROR: matrices should look like (m, n) and (n, l)"
+        )
 
     output = [[0 for _ in range(len2_x)] for _ in range(len1_y)]
 
@@ -41,8 +48,8 @@ def pymultiply(matrix_1: list, matrix_2: list):
 
 
 def main():
-    A = np.random.rand(600, 800)
-    B = np.random.rand(800, 500)
+    A = np.random.rand(300, 400)
+    B = np.random.rand(400, 500)
     a = A.tolist()
     b = B.tolist()
 
