@@ -80,8 +80,8 @@ class Server:
             client_socket.close()
 
     def work(self):
-        que = Queue(2 * self.client_workers)
-        connections = Queue(2 * self.client_workers)
+        que = Queue()
+        connections = Queue()
 
         threads = [
             threading.Thread(
@@ -95,7 +95,7 @@ class Server:
             thread.start()
 
         while True:
-            self.server.listen(2 * self.client_workers)
+            self.server.listen()
             client_socket, _ = self.server.accept()
             url = client_socket.recv(1024).decode(encoding="utf_8")
             if url == "!disconnect":

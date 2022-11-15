@@ -49,7 +49,7 @@ class Client:
 
     def work(self):
         file = open(self.path, "r", encoding="utf-8")
-        que = Queue(2 * self.workers)
+        que = Queue()
 
         threads = [
             threading.Thread(target=self.send_and_recieve, args=(que,))
