@@ -101,3 +101,7 @@ class TestCAPI(unittest.TestCase):
 
         self.assertEqual(multiply(a, b)[0:], np.dot(A, B).tolist()[0:])
         self.assertEqual(pymultiply(a, b)[0:], np.dot(A, B).tolist()[0:])
+
+
+if __name__ == "__main__":
+    unittest.main()
