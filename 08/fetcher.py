@@ -40,7 +40,6 @@ class Async_URLS:
                 out = self.parse_html(raw_data)
                 self.parse_counter += 1
                 print(f"Url {url.strip()}: {out}")
-
             except Empty:
                 continue
 
@@ -51,10 +50,12 @@ class Async_URLS:
             try:
                 async with session.get(url) as resp:
                     raw_data = await resp.read()
-                    assert resp.status == 200
                     url_que.put(url)
                     data_que.put(raw_data)
                     self.counter += 1
+            except Exception:
+                print(f"Url {url.strip()}: does not exist")
+                continue
             finally:
                 que.task_done()
 
