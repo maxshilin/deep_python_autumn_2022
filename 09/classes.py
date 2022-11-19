@@ -6,12 +6,13 @@ import gc
 from memory_profiler import profile
 
 
+# pylint: disable=invalid-name
 class Point:
-    def __init__(self, x, y, z, Vector):
+    def __init__(self, x, y, z, vector):
         self.x = x
         self.y = y
         self.z = z
-        self.vector = Vector
+        self.vector = vector
 
 
 class Vector:
@@ -82,31 +83,34 @@ class VectorWeakref:
         return sum(map(lambda x: x**p, self.vec_coordinates())) ** (1 / p)
 
 
+# pylint: enable=invalid-name
 def process_list(lst):
     for element in lst:
         element.p_norm()
 
 
+# pylint: disable=expression-not-assigned
 def cprof_process_list(obj):
     vec = [obj((1, 1, 1), (2, 2, 2)) for _ in range(100000)]
     [x.p_norm() for x in vec]
     del vec
 
 
+# pylint: enable=expression-not-assigned
 def cprofile_func(obj):
-    pr = cProfile.Profile()
-    pr.enable()
+    prof = cProfile.Profile()
+    prof.enable()
 
     cprof_process_list(obj)
 
-    pr.disable()
+    prof.disable()
 
-    s = io.StringIO()
+    string = io.StringIO()
     sortby = "cumulative"
-    ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-    ps.print_stats()
+    prof_stats = pstats.Stats(prof, stream=string).sort_stats(sortby)
+    prof_stats.print_stats()
 
-    print(s.getvalue())
+    print(string.getvalue())
 
 
 @profile
