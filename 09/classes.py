@@ -1,4 +1,9 @@
 import weakref
+import cProfile
+import pstats
+import io
+import gc
+from memory_profiler import profile
 
 
 class Point:
@@ -78,5 +83,51 @@ class VectorWeakref:
 
 
 def process_list(lst):
-    for obj in lst:
-        obj.p_norm()
+    for element in lst:
+        element.p_norm()
+
+
+def cprof_process_list(obj):
+    vec = [obj((1, 1, 1), (2, 2, 2)) for _ in range(100000)]
+    [x.p_norm() for x in vec]
+    del vec
+
+
+def cprofile_func(obj):
+    pr = cProfile.Profile()
+    pr.enable()
+
+    cprof_process_list(obj)
+
+    pr.disable()
+
+    s = io.StringIO()
+    sortby = "cumulative"
+    ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+    ps.print_stats()
+
+    print(s.getvalue())
+
+
+@profile
+def memprof_process_list():
+    vec1 = [Vector((1, 1, 1), (2, 2, 2)) for _ in range(100000)]
+    vec2 = [VectorSlots((1, 1, 1), (2, 2, 2)) for _ in range(100000)]
+    vec3 = [VectorWeakref((1, 1, 1), (2, 2, 2)) for _ in range(100000)]
+
+    del vec1
+    del vec2
+    del vec3
+    gc.collect()
+
+
+if __name__ == "__main__":
+    gc.disable()
+
+    cprofile_func(VectorSlots)
+    cprofile_func(VectorSlots)
+    cprofile_func(VectorWeakref)
+
+    gc.collect()
+    memprof_process_list()
+    gc.enable()
