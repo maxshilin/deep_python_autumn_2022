@@ -28,63 +28,60 @@ class Async_URLS:
         counter = delete_uninteresting_words(counter)
         return dict(counter.most_common(5))
 
-    def thread_worker(self, url_que, data_que):
+    def thread_worker(self, url_que):
         while True:
             try:
-                url = url_que.get(timeout=0.1)
+                url, raw_data = url_que.get(timeout=0.1)
                 if url is None:
                     url_que.task_done()
                     break
 
-                raw_data = data_que.get(timeout=0.1)
                 out = self.parse_html(raw_data)
                 self.parse_counter += 1
                 print(f"Url {url.strip()}: {out}")
+
             except Empty:
                 continue
 
-    async def fetch(self, session, que, url_que, data_que):
+    async def fetch(self, session, que, url_que):
         while True:
             url = await que.get()
-
             try:
                 async with session.get(url) as resp:
                     raw_data = await resp.read()
-                    url_que.put(url)
-                    data_que.put(raw_data)
+                    url_que.put((url, raw_data))
                     self.counter += 1
+
             except Exception:
                 print(f"Url {url.strip()}: does not exist")
                 continue
+
             finally:
                 que.task_done()
 
     async def batch_fetch(self):
-        que = asyncio.Queue()
-        url_que = Queue()
-        data_que = Queue()
+        que = asyncio.Queue(self.workers)
+        data_que = Queue(self.workers)
 
         thread = threading.Thread(
             target=self.thread_worker,
-            args=(url_que, data_que),
+            args=(data_que,),
         )
 
         thread.start()
-
-        with open(self.urls, "r", encoding="utf_8") as file:
-            for url in file.readlines():
-                await que.put(url)
-
         async with aiohttp.ClientSession() as session:
             workers = [
-                asyncio.create_task(
-                    self.fetch(session, que, url_que, data_que)
-                )
+                asyncio.create_task(self.fetch(session, que, data_que))
                 for _ in range(self.workers)
             ]
+
+            with open(self.urls, "r", encoding="utf_8") as file:
+                for url in file:
+                    await que.put(url)
+
             await que.join()
 
-            url_que.put(None)
+            data_que.put((None, None))
             thread.join()
 
             for worker in workers:

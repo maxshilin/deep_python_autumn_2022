@@ -16,50 +16,43 @@ class TestServer(AioHTTPTestCase):
 
     async def test_successful(self):
         crawler = Async_URLS("urls.txt", 1)
-        urls = ["https://en.wikipedia.org/wiki/Python_(programming_language)"]
+        url = "https://en.wikipedia.org/wiki/Python_(programming_language)"
 
         que = asyncio.Queue()
-        url_que = Queue()
         data_que = Queue()
 
-        await que.put(urls[0])
+        await que.put(url)
 
         async with aiohttp.ClientSession() as session:
-            task = asyncio.create_task(
-                crawler.fetch(session, que, url_que, data_que)
-            )
+            task = asyncio.create_task(crawler.fetch(session, que, data_que))
             await que.join()
             task.cancel()
 
+        downloaded_url, _ = data_que.get()
         self.assertEqual(crawler.counter, 1)
         self.assertEqual(crawler.parse_counter, 0)
-        self.assertListEqual(urls, [url_que.get()])
+        self.assertEqual(url, downloaded_url)
 
     async def test_unsuccessful(self):
         crawler = Async_URLS("urls.txt", 1)
-        urls = ["https://en.wikipedia/Python_(programming_language)"]
+        url = "https://en.wikipedia/Python_(programming_language)"
 
         que = asyncio.Queue()
-        url_que = Queue()
         data_que = Queue()
 
-        await que.put(urls[0])
+        await que.put(url)
 
         with mock.patch(
             "fetcher.sys.stdout", new_callable=StringIO
         ) as print_mock:
             async with aiohttp.ClientSession() as session:
-                task = asyncio.create_task(
-                    crawler.fetch(session, que, url_que, data_que)
-                )
+                asyncio.create_task(crawler.fetch(session, que, data_que))
                 await que.join()
-                task.cancel()
-
                 print_server = print_mock.getvalue()
 
         self.assertEqual(crawler.counter, 0)
         self.assertEqual(crawler.parse_counter, 0)
-        self.assertEqual(f"Url {urls[0]}: does not exist\n", print_server)
+        self.assertEqual(f"Url {url}: does not exist\n", print_server)
 
     @mock.patch("fetcher.Async_URLS.parse_html")
     def test_download(self, parser_mock):
@@ -75,10 +68,9 @@ class TestServer(AioHTTPTestCase):
                 print_mock.getvalue().split("\n")[:-1],
             )
 
-        file = open("urls.txt", "r", encoding="utf_8")
-        data = file.readlines()
-        urls = [x.strip() for x in data]
-        file.close()
+        with open("urls.txt", "r", encoding="utf_8") as file:
+            data = file.readlines()
+            urls = [x.strip() for x in data]
 
         self.assertEqual(crawler.counter, 100)
         self.assertEqual(crawler.parse_counter, 100)
