@@ -15,8 +15,7 @@ class TestClientServer(unittest.TestCase):
         urls = file.readlines()
         print_data = [url.strip() + ": Hello from server!" for url in urls]
 
-        send_data = ["10".encode(encoding="utf_8")]
-        send_data += [url.strip().encode(encoding="utf_8") for url in urls]
+        send_data = [url.strip().encode(encoding="utf_8") for url in urls]
         send_data.append("!disconnect".encode(encoding="utf_8"))
 
         file.close()
@@ -39,7 +38,29 @@ class TestClientServer(unittest.TestCase):
         self.assertCountEqual(print_data, print_client)
         self.assertCountEqual(send_data, send_client)
         self.assertEqual(client.counter, 100)
-        self.assertEqual(len(conn_mock.mock_calls), 102)
+        self.assertEqual(len(conn_mock.mock_calls), 101)
+
+    @mock.patch("socket.socket")
+    def test_incorrect_url(self, socket_mock):
+        recieved_data = ["https://vk"]
+        recieved_data.append("!disconnect")
+
+        sended_data = [url.encode(encoding="utf_8") for url in recieved_data]
+
+        socket_mock.return_value.accept.return_value = (socket_mock, None)
+        socket_mock.recv.side_effect = sended_data
+
+        server = Server(1, 5)
+        with mock.patch(
+            "client.sys.stdout", new_callable=StringIO
+        ) as print_mock:
+            server.work()
+            print_server = print_mock.getvalue().split("\n")[:-1]
+
+        print_data = "URL https://vk does not exist"
+
+        self.assertEqual(print_data, print_server[0])
+        self.assertEqual(server.counter, 0)
 
     @mock.patch("server.Server.fetch_url")
     @mock.patch("socket.socket")
@@ -47,8 +68,7 @@ class TestClientServer(unittest.TestCase):
         file = open("urls.txt", "r", encoding="utf_8")
         urls = file.readlines()
 
-        recieved_data = ["10"]
-        recieved_data += [url.strip() for url in urls]
+        recieved_data = [url.strip() for url in urls]
         recieved_data.append("!disconnect")
 
         sended_data = [url.encode(encoding="utf_8") for url in recieved_data]
@@ -75,7 +95,7 @@ class TestClientServer(unittest.TestCase):
                         fetch_client.append(arg)
 
         self.assertEqual(print_data, print_server)
-        self.assertCountEqual(fetch_client, recieved_data[1:-1])
+        self.assertCountEqual(fetch_client, recieved_data[:-1])
         self.assertEqual(server.counter, 100)
 
 
