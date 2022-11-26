@@ -1,5 +1,5 @@
 import threading
-from queue import Queue, Empty
+from queue import Queue
 from urllib.request import urlopen
 import socket
 import re
@@ -16,10 +16,12 @@ class Server:
         self.k = k
         self.server = None
         self.workers = workers
+        self.break_loop = False
 
         self.server = socket.socket()
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server.bind(("localhost", 777))
+        self.server.settimeout(1)
 
         self.lock = threading.Lock()
         self.counter = 0
@@ -44,11 +46,14 @@ class Server:
             return None
 
     def fetch_and_send(self, que):
-        while True:
+        while not self.break_loop:
             try:
-                url, client_socket = que.get(timeout=0.1)
-                if url is None:
-                    break
+                client_socket = que.get(timeout=0.1)
+                url = client_socket.recv(1024).decode(encoding="utf_8")
+
+                if url == "!disconnect":
+                    self.break_loop = True
+                    continue
 
                 data = self.fetch_url(url)
 
@@ -61,9 +66,6 @@ class Server:
                         self.counter += 1
                         print(f"URL downloaded: {self.counter}")
                 client_socket.close()
-
-            except Empty:
-                continue
 
             except Exception:
                 continue
@@ -83,16 +85,13 @@ class Server:
         for thread in threads:
             thread.start()
 
-        while True:
-            client_socket, _ = self.server.accept()
-            url = client_socket.recv(1024).decode(encoding="utf_8")
-            if url == "!disconnect":
-                break
+        while not self.break_loop:
+            try:
+                client_socket, _ = self.server.accept()
+                que.put(client_socket)
 
-            que.put((url, client_socket))
-
-        for _ in range(len(threads)):
-            que.put((None, None))
+            except Exception:
+                continue
 
         for thread in threads:
             thread.join()
