@@ -14,7 +14,9 @@ class TestServer(AioHTTPTestCase):
         app = web.Application()
         return app
 
-    async def test_successful(self):
+    @mock.patch("fetcher.Async_URLS.parse_html")
+    async def test_successful(self, parser_mock):
+        parser_mock.return_value = ""
         crawler = Async_URLS("urls.txt", 1)
         url = "https://en.wikipedia.org/wiki/Python_(programming_language)"
 
@@ -33,7 +35,9 @@ class TestServer(AioHTTPTestCase):
         self.assertEqual(crawler.parse_counter, 0)
         self.assertEqual(url, downloaded_url)
 
-    async def test_unsuccessful(self):
+    @mock.patch("fetcher.Async_URLS.parse_html")
+    async def test_unsuccessful(self, parser_mock):
+        parser_mock.return_value = ""
         crawler = Async_URLS("urls.txt", 1)
         url = "https://en.wikipedia/Python_(programming_language)"
 

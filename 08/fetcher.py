@@ -33,7 +33,6 @@ class Async_URLS:
             try:
                 url, raw_data = url_que.get(timeout=0.1)
                 if url is None:
-                    url_que.task_done()
                     break
 
                 out = self.parse_html(raw_data)
